@@ -1,0 +1,37 @@
+# Sphinx H743 - board default parameters
+# Loaded once at first boot / after param reset. Mirrors the SERIAL_ORDER in hwdef.dat.
+
+# SERIAL1 (UART1, PA9/PA10) - RC receiver input
+SERIAL1_PROTOCOL 23
+SERIAL1_BAUD 115
+
+# SERIAL2 (UART2, PD6 RX-only) - ESC telemetry
+SERIAL2_PROTOCOL 16
+SERIAL2_BAUD 115
+
+# SERIAL3 (UART3, PD8/PD9) - GPS  (ArduPilot default, listed for clarity)
+SERIAL3_PROTOCOL 5
+SERIAL3_BAUD 230
+
+# SERIAL4 (UART4, PB9/PB8) - VTX control, SmartAudio
+SERIAL4_PROTOCOL 37
+SERIAL4_BAUD 4
+
+# SERIAL5 (USART6, PC6/PC7) - HD OSD / MSP DisplayPort
+SERIAL5_PROTOCOL 42
+SERIAL5_BAUD 115
+
+# SERIAL6 (UART7, PE8/PE7) - spare
+SERIAL6_PROTOCOL -1
+
+# SERIAL7 (UART8, PE1/PE0) - spare
+SERIAL7_PROTOCOL -1
+
+# Onboard analog OSD (AT7456E on SPI2)
+OSD_TYPE 1
+
+# Battery monitor - analog volt+curr on PC0/PC1
+BATT_MONITOR 4
+
+# Buzzer on PA15
+NTF_BUZZ_TYPES 1

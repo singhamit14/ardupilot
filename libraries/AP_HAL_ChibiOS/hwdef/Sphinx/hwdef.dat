@@ -1,0 +1,320 @@
+# Sphinx H743 - Scientech flight controller
+# hw definition file for processing by chibios_pins.py
+#
+# Derived directly from Schematic.png (STM32H743VIT6, LQFP100).
+# Every pin below traces to a named net on that schematic - see PINMAP.md.
+# contact: singhamit.iot@gmail.com
+
+# MCU class and specific type
+MCU STM32H7xx STM32H743xx
+
+USB_STRING_MANUFACTURER "Scientech"
+USB_STRING_PRODUCT "Sphinx"
+
+# board ID. See Tools/AP_Bootloader/board_types.txt
+APJ_BOARD_ID AP_HW_Sphinx_H7
+
+
+# =============================================================================
+#  CLOCK
+#  HSE crystal on PH0 (MCU_OSC_IN) / PH1 (MCU_OSC_OUT).
+#  8 MHz confirmed against the fitted part.
+# =============================================================================
+OSCILLATOR_HZ 8000000
+
+
+# =============================================================================
+#  FLASH LAYOUT  (H743 = 2 MB, 128 KB sectors)
+# =============================================================================
+FLASH_SIZE_KB 2048
+
+# first 128 KB (sector 0) reserved for the ArduPilot bootloader
+FLASH_RESERVE_START_KB 128
+
+# parameter storage: sectors 14 and 15 (1792 KB .. 2048 KB)
+STORAGE_FLASH_PAGE 14
+define HAL_STORAGE_SIZE 32768
+
+
+# =============================================================================
+#  SYSTEM
+#  TIM12 is not used by any pin on this board, so it is free for the ChibiOS
+#  system tick. Do not reassign without checking the PWM section below.
+# =============================================================================
+STM32_ST_USE_TIMER 12
+define CH_CFG_ST_RESOLUTION 16
+
+
+# =============================================================================
+#  USB  (schematic: USB_D- PA11, USB_D+ PA12, USB_DETECT PE2)
+# =============================================================================
+define HAL_ENABLE_USB_VCP 1
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+PE2  VBUS INPUT OPENDRAIN
+
+
+# =============================================================================
+#  SWD debug  (schematic: SWDIO PA13, SWCLK PA14)
+# =============================================================================
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+
+# =============================================================================
+#  SPI BUSES
+# =============================================================================
+
+# --- SPI1 : IMU1 -------------------------------------------------------------
+# schematic nets GYRO1_SPI1_CS / _SCK / _MISO / _MOSI
+PA4 IMU1_CS   CS
+PA5 SPI1_SCK  SPI1
+PA6 SPI1_MISO SPI1
+PD7 SPI1_MOSI SPI1
+
+# --- SPI4 : IMU2 -------------------------------------------------------------
+# schematic nets GYRO2_SPI4_CS / _SCK / _MISO / _MOSI
+PE11 IMU2_CS   CS
+PE12 SPI4_SCK  SPI4
+PE13 SPI4_MISO SPI4
+PE14 SPI4_MOSI SPI4
+
+# --- IMU interrupt lines -----------------------------------------------------
+PB2  DRDY1_IMU INPUT   # schematic GYRO1_INT - IMU on SPI1
+PE15 DRDY2_IMU INPUT   # schematic GYRO2_INT - IMU on SPI4
+
+# --- SPI2 : onboard analog OSD ----------------------------------------------
+# schematic nets OSD_SPI2_CS / _SCK / _MISO / _MOSI
+PB12 OSD_CS    CS
+PB13 SPI2_SCK  SPI2
+PB14 SPI2_MISO SPI2
+PB15 SPI2_MOSI SPI2
+
+# --- SPI3 : external header (optical flow etc.) ------------------------------
+PB3 SPI3_SCK  SPI3
+PB4 SPI3_MISO SPI3
+PB5 SPI3_MOSI SPI3
+PD4 EXT_CS1   CS      # schematic SPI3_CS
+
+
+# =============================================================================
+#  I2C
+#  I2C2 (PB10/PB11) carries the onboard barometer  -> bus 0, marked internal
+#  I2C1 (PB6/PB7)   is the external header         -> bus 1
+# =============================================================================
+I2C_ORDER I2C2 I2C1
+
+PB10 I2C2_SCL I2C2    # schematic BARO_I2C2_SCL
+PB11 I2C2_SDA I2C2    # schematic BARO_I2C2_SDA
+
+PB6 I2C1_SCL I2C1
+PB7 I2C1_SDA I2C1
+
+define HAL_I2C_INTERNAL_MASK 1
+
+
+# =============================================================================
+#  ANALOG INPUTS  (all on ADC1; channel numbers from STM32H743xx.py ADC1_map)
+#    PC0 -> ADC1_INP10   PC1 -> ADC1_INP11
+#    PC4 -> ADC1_INP4    PC5 -> ADC1_INP8
+#  VREF+ is tied to 3V3_A on the schematic, so full scale is 3.3 V.
+# =============================================================================
+PC0 BATT_VOLTAGE_SENS ADC1 SCALE(1)   # schematic ADC_VBAT
+PC1 BATT_CURRENT_SENS ADC1 SCALE(1)   # schematic ADC_CURR
+PC4 PRESSURE_SENS     ADC1 SCALE(2)   # schematic ADC_SPARE - airspeed
+PC5 RSSI_ADC          ADC1            # schematic ADC_RSSI
+
+define HAL_BATT_VOLT_PIN 10
+define HAL_BATT_CURR_PIN 11
+define HAL_BATT_VOLT_SCALE 11.0
+define HAL_BATT_CURR_SCALE 40.0
+
+define HAL_DEFAULT_AIRSPEED_PIN 4
+define BOARD_RSSI_ANA_PIN 8
+
+
+# =============================================================================
+#  INDICATOR LEDs  (schematic LED_01 on PE9, LED_02 on PA7)
+#  Active-low (pin sinks the LED) - confirmed.
+# =============================================================================
+define AP_NOTIFY_GPIO_LED_2_ENABLED 1
+PE9 LED0 OUTPUT LOW GPIO(90)
+PA7 LED1 OUTPUT LOW GPIO(91)
+define HAL_GPIO_A_LED_PIN 90
+define HAL_GPIO_B_LED_PIN 91
+
+
+# =============================================================================
+#  SERIAL / UART ORDER
+#    SERIAL0 = USB                       MAVLink2
+#    SERIAL1 = USART1 PA9/PA10           receiver (RC in)
+#    SERIAL2 = USART2 PD6 (RX only)      ESC telemetry   - PD5 is NC
+#    SERIAL3 = USART3 PD8/PD9            GPS
+#    SERIAL4 = UART4  PB9/PB8            VTX control
+#    SERIAL5 = USART6 PC6/PC7            HD OSD / DisplayPort
+#    SERIAL6 = UART7  PE8/PE7            spare
+#    SERIAL7 = UART8  PE1/PE0            spare
+#  Protocol defaults live in defaults.parm alongside this file.
+# =============================================================================
+SERIAL_ORDER OTG1 USART1 USART2 USART3 UART4 USART6 UART7 UART8
+
+PA9  USART1_TX USART1
+PA10 USART1_RX USART1
+
+PD6  USART2_RX USART2
+
+PD8  USART3_TX USART3
+PD9  USART3_RX USART3
+
+PB9  UART4_TX UART4
+PB8  UART4_RX UART4
+
+PC6  USART6_TX USART6
+PC7  USART6_RX USART6
+
+PE8  UART7_TX UART7
+PE7  UART7_RX UART7
+
+PE1  UART8_TX UART8
+PE0  UART8_RX UART8
+
+
+# =============================================================================
+#  CAN  (schematic CAN_RX PD0 / CAN_TX PD1)
+#  HAL_CANFD_SUPPORTED is emitted automatically by chibios_hwdef.py - do not
+#  define it here. FD framing still requires an FD-capable transceiver fitted.
+# =============================================================================
+CAN_ORDER 1
+PD0 CAN1_RX CAN1
+PD1 CAN1_TX CAN1
+
+
+# =============================================================================
+#  PWM OUTPUTS
+#
+#  Timer groups (all outputs in a group share one output rate):
+#    PWM 1-2   TIM3   M1  M2
+#    PWM 3-6   TIM5   M3  M4  M5  M6
+#    PWM 7-10  TIM4   M7  M8  M9  M10
+#    PWM 11-12 TIM15  S1  S2
+#
+#  PB0/PB1 use TIM3_CH3/CH4 (AF2), NOT TIM8_CH2N/CH3N. chibios_hwdef.py drops
+#  BIDIR on complementary (N) channels, so TIM8 would make bi-directional
+#  DShot impossible on M1/M2. TIM3 gives real channels on the same two pins.
+#
+#  BIDIR requests an input-capture DMA stream so the channel can read ESC RPM
+#  telemetry back over the signal wire (bi-directional DShot).
+#
+#  M10 (PD15) has NO BIDIR: the STM32H7 DMAMUX has no TIM4_CH4 request line
+#  (TIM4 only exposes CH1/CH2/CH3/UP), so that channel cannot input-capture.
+#  PD15 has no other timer mapping, so this is a hardware limit of the board.
+#  M10 still outputs DShot normally, it just reports no RPM.
+#  If RPM on all ten motors matters, wire the 10th ESC to S1/S2 or respin PD15.
+# =============================================================================
+PB0 TIM3_CH3 TIM3 PWM(1)  GPIO(50) BIDIR   # M1
+PB1 TIM3_CH4 TIM3 PWM(2)  GPIO(51) BIDIR   # M2
+
+PA0 TIM5_CH1 TIM5 PWM(3)  GPIO(52) BIDIR   # M3
+PA1 TIM5_CH2 TIM5 PWM(4)  GPIO(53) BIDIR   # M4
+PA2 TIM5_CH3 TIM5 PWM(5)  GPIO(54) BIDIR   # M5
+PA3 TIM5_CH4 TIM5 PWM(6)  GPIO(55) BIDIR   # M6
+
+PD12 TIM4_CH1 TIM4 PWM(7)  GPIO(56) BIDIR  # M7
+PD13 TIM4_CH2 TIM4 PWM(8)  GPIO(57) BIDIR  # M8
+PD14 TIM4_CH3 TIM4 PWM(9)  GPIO(58) BIDIR  # M9
+PD15 TIM4_CH4 TIM4 PWM(10) GPIO(59)        # M10 - see note below
+
+PE5 TIM15_CH1 TIM15 PWM(11) GPIO(60)       # S1 - servo
+PE6 TIM15_CH2 TIM15 PWM(12) GPIO(61)       # S2 - servo
+
+# addressable LED strip (schematic LED_STRIP)
+PA8 TIM1_CH1 TIM1 PWM(13) GPIO(62)
+
+# buzzer (schematic BEEPER)
+PA15 TIM2_CH1 TIM2 GPIO(32) ALARM
+
+
+# =============================================================================
+#  PINIO  (schematic PINIO1 / PINIO2 - switchable rails)
+# =============================================================================
+PD10 PINIO1 OUTPUT GPIO(81) LOW
+PD11 PINIO2 OUTPUT GPIO(82) LOW
+
+
+# =============================================================================
+#  microSD  (SDMMC1, 4-bit)
+# =============================================================================
+PC8  SDMMC1_D0  SDMMC1
+PC9  SDMMC1_D1  SDMMC1
+PC10 SDMMC1_D2  SDMMC1
+PC11 SDMMC1_D3  SDMMC1
+PC12 SDMMC1_CK  SDMMC1
+PD2  SDMMC1_CMD SDMMC1
+
+define FATFS_HAL_DEVICE SDCD1
+define HAL_OS_FATFS_IO 1
+
+
+# =============================================================================
+#  DMA
+#  SDMMC first, then the two IMU buses, then the DShot timer groups.
+# =============================================================================
+DMA_PRIORITY S* SPI1* SPI4* TIM3* TIM5* TIM4*
+DMA_NOSHARE  SPI1* SPI4*
+
+
+# =============================================================================
+#  SPI DEVICES
+# =============================================================================
+# ICM-42688-P tolerates 24 MHz; 16 MHz is the common ArduPilot setting for it
+# and leaves margin on the SPI traces.
+SPIDEV icm42688_1 SPI1 DEVID1 IMU1_CS MODE3  2*MHZ 16*MHZ
+SPIDEV icm42688_2 SPI4 DEVID1 IMU2_CS MODE3  2*MHZ 16*MHZ
+SPIDEV osd        SPI2 DEVID4 OSD_CS  MODE0 10*MHZ 10*MHZ
+
+# external SPI3 header
+SPIDEV pixartflow SPI3 DEVID1 EXT_CS1 MODE3 2*MHZ 2*MHZ
+
+
+# =============================================================================
+#  IMUs - two ICM-42688-P, one per SPI bus. Invensensev3 driver.
+#  Both rotations confirmed against the board.
+#
+#  FAST_SAMPLE mask 3 = both IMUs fast-sampled (ICM-42688-P supports it).
+# =============================================================================
+IMU Invensensev3 SPI:icm42688_1 ROTATION_PITCH_180_YAW_90
+IMU Invensensev3 SPI:icm42688_2 ROTATION_PITCH_180_YAW_90
+
+define HAL_DEFAULT_INS_FAST_SAMPLE 3
+
+
+# =============================================================================
+#  BAROMETER  (onboard, I2C2 = bus 0)
+# =============================================================================
+BARO DPS310 I2C:0:0x76
+
+
+# =============================================================================
+#  COMPASS
+#  No compass on the schematic. Probe the external I2C header for one.
+# =============================================================================
+define AP_COMPASS_PROBING_ENABLED 1
+define HAL_COMPASS_AUTO_ROT_DEFAULT 2
+
+
+# =============================================================================
+#  OSD  (AT7456E / MAX7456-compatible on SPI2)
+# =============================================================================
+define OSD_ENABLED 1
+define HAL_OSD_TYPE_DEFAULT 1
+ROMFS_WILDCARD libraries/AP_OSD/fonts/font*.bin
+
+
+# =============================================================================
+#  NOTIFY
+# =============================================================================
+define DEFAULT_NTF_LED_TYPES 455
+
+
+# build ABIN so the bootloader can flash firmware from the SD card
+env BUILD_ABIN True

@@ -1,0 +1,82 @@
+# Sphinx H743 - bootloader hardware definition
+#
+# Derived directly from Schematic.png (STM32H743VIT6, LQFP100).
+# Keep the pins here consistent with hwdef.dat - see PINMAP.md.
+# contact: singhamit.iot@gmail.com
+
+MCU STM32H7xx STM32H743xx
+
+USB_STRING_MANUFACTURER "Scientech"
+USB_STRING_PRODUCT "Sphinx"
+
+# board ID. See Tools/AP_Bootloader/board_types.txt
+APJ_BOARD_ID AP_HW_Sphinx_H7
+
+# must match OSCILLATOR_HZ in hwdef.dat (8 MHz crystal, confirmed)
+OSCILLATOR_HZ 8000000
+
+FLASH_SIZE_KB 2048
+
+# bootloader lives at offset zero
+FLASH_RESERVE_START_KB 0
+
+# where the bootloader places the firmware (H743 has 128 KB sectors)
+FLASH_BOOTLOADER_LOAD_KB 128
+
+
+# --- serial ports ------------------------------------------------------------
+# Required: without SERIAL_ORDER the ChibiOS serial driver is enabled with no
+# USART assigned and the build fails in hal_serial_lld.h.
+# UART7 (PE8/PE7) is kept as a serial recovery path if USB will not enumerate.
+SERIAL_ORDER OTG1 UART7
+
+PE8 UART7_TX UART7
+PE7 UART7_RX UART7
+
+# --- USB ---------------------------------------------------------------------
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+# --- SWD ---------------------------------------------------------------------
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+
+# --- switchable rails --------------------------------------------------------
+# hold both PINIOs in a defined state while the bootloader runs
+PD10 PINIO1 OUTPUT LOW
+PD11 PINIO2 OUTPUT LOW
+
+
+# --- bootloader LED ----------------------------------------------------------
+# schematic LED_01 is on PE9. PE3 is NOT CONNECTED on this board.
+PE9 LED_BOOTLOADER OUTPUT LOW
+define HAL_LED_ON 0
+
+
+# --- chip selects ------------------------------------------------------------
+# drive every CS high so no SPI device is left selected when the app starts
+PA4  IMU1_CS  CS
+PE11 IMU2_CS  CS
+PB12 OSD_CS   CS
+PD4  EXT_CS1  CS
+
+
+# --- flashing from SD card ---------------------------------------------------
+define CH_CFG_USE_MEMCORE 1
+define CH_CFG_USE_HEAP 1
+define CH_CFG_USE_SEMAPHORES 0
+define CH_CFG_USE_MUTEXES 1
+define CH_CFG_USE_DYNAMIC 1
+define CH_CFG_USE_WAITEXIT 1
+define CH_CFG_USE_REGISTRY 1
+
+PC8  SDMMC1_D0  SDMMC1
+PC9  SDMMC1_D1  SDMMC1
+PC10 SDMMC1_D2  SDMMC1
+PC11 SDMMC1_D3  SDMMC1
+PC12 SDMMC1_CK  SDMMC1
+PD2  SDMMC1_CMD SDMMC1
+
+define HAL_OS_FATFS_IO 1
+define AP_BOOTLOADER_FLASH_FROM_SD_ENABLED 1
