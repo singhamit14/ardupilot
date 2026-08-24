@@ -1,4 +1,4 @@
-# Sphinx H743 - Scientech flight controller
+# Sphare H743 - Scientech flight controller
 # hw definition file for processing by chibios_pins.py
 #
 # Derived directly from Schematic.png (STM32H743VIT6, LQFP100).
@@ -9,10 +9,10 @@
 MCU STM32H7xx STM32H743xx
 
 USB_STRING_MANUFACTURER "Scientech"
-USB_STRING_PRODUCT "Sphinx"
+USB_STRING_PRODUCT "Sphare"
 
 # board ID. See Tools/AP_Bootloader/board_types.txt
-APJ_BOARD_ID AP_HW_Sphinx_H7
+APJ_BOARD_ID AP_HW_Sphare_H7
 
 
 # =============================================================================
@@ -134,14 +134,14 @@ define BOARD_RSSI_ANA_PIN 8
 
 
 # =============================================================================
-#  INDICATOR LEDs  (schematic LED_01 on PE9, LED_02 on PA7)
+#  INDICATOR LED  (schematic LED_01 on PE9)
 #  Active-low (pin sinks the LED) - confirmed.
+#  Single-LED notify driver. GPS/health status is reported over MAVLink to the
+#  GCS and on the OSD, so LED_02 on PA7 is populated but left undriven.
 # =============================================================================
-define AP_NOTIFY_GPIO_LED_2_ENABLED 1
+define AP_NOTIFY_GPIO_LED_1_ENABLED 1
 PE9 LED0 OUTPUT LOW GPIO(90)
-PA7 LED1 OUTPUT LOW GPIO(91)
-define HAL_GPIO_A_LED_PIN 90
-define HAL_GPIO_B_LED_PIN 91
+define AP_NOTIFY_GPIO_LED_1_PIN 90
 
 
 # =============================================================================
