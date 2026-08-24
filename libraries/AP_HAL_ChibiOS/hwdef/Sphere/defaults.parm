@@ -1,4 +1,4 @@
-# Sphare H743 - board default parameters
+# Sphere H743 - board default parameters
 # Loaded once at first boot / after param reset. Mirrors the SERIAL_ORDER in hwdef.dat.
 
 # SERIAL1 (UART1, PA9/PA10) - RC receiver input

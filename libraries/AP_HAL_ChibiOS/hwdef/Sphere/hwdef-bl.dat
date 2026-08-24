@@ -1,4 +1,4 @@
-# Sphare H743 - bootloader hardware definition
+# Sphere H743 - bootloader hardware definition
 #
 # Derived directly from Schematic.png (STM32H743VIT6, LQFP100).
 # Keep the pins here consistent with hwdef.dat - see PINMAP.md.
@@ -7,10 +7,10 @@
 MCU STM32H7xx STM32H743xx
 
 USB_STRING_MANUFACTURER "Scientech"
-USB_STRING_PRODUCT "Sphare"
+USB_STRING_PRODUCT "Sphere"
 
 # board ID. See Tools/AP_Bootloader/board_types.txt
-APJ_BOARD_ID AP_HW_Sphare_H7
+APJ_BOARD_ID AP_HW_Sphere_H7
 
 # must match OSCILLATOR_HZ in hwdef.dat (8 MHz crystal, confirmed)
 OSCILLATOR_HZ 8000000
