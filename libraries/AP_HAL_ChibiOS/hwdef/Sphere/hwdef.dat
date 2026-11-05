@@ -12,7 +12,7 @@ USB_STRING_MANUFACTURER "Scientech"
 USB_STRING_PRODUCT "Sphere"
 
 # board ID. See Tools/AP_Bootloader/board_types.txt
-APJ_BOARD_ID AP_HW_Sphere_H7
+APJ_BOARD_ID AP_HW_Sphere
 
 
 # =============================================================================
@@ -175,11 +175,11 @@ PB8  UART4_RX UART4
 PC6  USART6_TX USART6
 PC7  USART6_RX USART6
 
-PE8  UART7_TX UART7
-PE7  UART7_RX UART7
+PE8  UART7_TX UART7  NODMA
+PE7  UART7_RX UART7  NODMA
 
-PE1  UART8_TX UART8
-PE0  UART8_RX UART8
+PE1  UART8_TX UART8  NODMA
+PE0  UART8_RX UART8  NODMA
 
 
 # =============================================================================
@@ -262,7 +262,7 @@ define HAL_OS_FATFS_IO 1
 #  DMA
 #  SDMMC first, then the two IMU buses, then the DShot timer groups.
 # =============================================================================
-DMA_PRIORITY S* SPI1* SPI4* TIM3* TIM5* TIM4*
+DMA_PRIORITY SPI1* SPI4* TIM3* TIM5* TIM4*
 DMA_NOSHARE  SPI1* SPI4*
 
 
@@ -271,8 +271,13 @@ DMA_NOSHARE  SPI1* SPI4*
 # =============================================================================
 # ICM-42688-P tolerates 24 MHz; 16 MHz is the common ArduPilot setting for it
 # and leaves margin on the SPI traces.
-SPIDEV icm42688_1 SPI1 DEVID1 IMU1_CS MODE3  2*MHZ 16*MHZ
-SPIDEV icm42688_2 SPI4 DEVID1 IMU2_CS MODE3  2*MHZ 16*MHZ
+# SPIDEV icm42688_1 SPI1 DEVID1 IMU1_CS MODE3  2*MHZ 16*MHZ
+# SPIDEV icm42688_2 SPI4 DEVID1 IMU2_CS MODE3  2*MHZ 16*MHZ
+
+# BMI270 max SPI clock is 10 MHz
+SPIDEV bmi270_1   SPI1 DEVID1 IMU1_CS MODE3  1*MHZ 10*MHZ
+SPIDEV bmi270_2   SPI4 DEVID1 IMU2_CS MODE3  1*MHZ 10*MHZ
+
 SPIDEV osd        SPI2 DEVID4 OSD_CS  MODE0 10*MHZ 10*MHZ
 
 # external SPI3 header
@@ -280,13 +285,18 @@ SPIDEV pixartflow SPI3 DEVID1 EXT_CS1 MODE3 2*MHZ 2*MHZ
 
 
 # =============================================================================
-#  IMUs - two ICM-42688-P, one per SPI bus. Invensensev3 driver.
-#  Both rotations confirmed against the board.
+#  IMUs - two BMI270, one per SPI bus. BMI270 driver.
+#  The old ICM-42688-P (Invensensev3) lines are kept commented out below.
 #
-#  FAST_SAMPLE mask 3 = both IMUs fast-sampled (ICM-42688-P supports it).
+#  FAST_SAMPLE has no effect on BMI270: the driver runs at a fixed 1600 Hz
+#  and never enables fast sampling. The define is kept so that fast sampling
+#  turns back on (mask 3 = both IMUs) if the ICM-42688-P lines are restored.
 # =============================================================================
-IMU Invensensev3 SPI:icm42688_1 ROTATION_PITCH_180_YAW_90
-IMU Invensensev3 SPI:icm42688_2 ROTATION_PITCH_180_YAW_90
+# IMU Invensensev3 SPI:icm42688_1 ROTATION_PITCH_180_YAW_90
+# IMU Invensensev3 SPI:icm42688_2 ROTATION_PITCH_180_YAW_90
+ 
+IMU BMI270 SPI:bmi270_1 ROTATION_PITCH_180
+IMU BMI270 SPI:bmi270_2 ROTATION_PITCH_180
 
 define HAL_DEFAULT_INS_FAST_SAMPLE 3
 
@@ -294,8 +304,9 @@ define HAL_DEFAULT_INS_FAST_SAMPLE 3
 # =============================================================================
 #  BAROMETER  (onboard, I2C2 = bus 0)
 # =============================================================================
+define HAL_BARO_ALLOW_INIT_NO_BARO 1
 BARO DPS310 I2C:0:0x76
-
+# BARO DPS310 I2C:0:0x77
 
 # =============================================================================
 #  COMPASS

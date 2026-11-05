@@ -10,7 +10,7 @@ USB_STRING_MANUFACTURER "Scientech"
 USB_STRING_PRODUCT "Sphere"
 
 # board ID. See Tools/AP_Bootloader/board_types.txt
-APJ_BOARD_ID AP_HW_Sphere_H7
+APJ_BOARD_ID AP_HW_Sphere
 
 # must match OSCILLATOR_HZ in hwdef.dat (8 MHz crystal, confirmed)
 OSCILLATOR_HZ 8000000
@@ -61,6 +61,7 @@ PE11 IMU2_CS  CS
 PB12 OSD_CS   CS
 PD4  EXT_CS1  CS
 
+define HAL_BARO_ALLOW_INIT_NO_BARO 1
 
 # --- flashing from SD card ---------------------------------------------------
 define CH_CFG_USE_MEMCORE 1
