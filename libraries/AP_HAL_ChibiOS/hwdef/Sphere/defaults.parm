@@ -26,6 +26,54 @@ SERIAL7_PROTOCOL -1
 # Onboard analog OSD (AT7456E on SPI2)
 OSD_TYPE 1
 
+# Sphere "Jet HUD" layout, PAL 30x16 grid
+# Font 5 = clarity + Scientech boot logo + viewfinder corners
+OSD_FONT 5
+# OPTIONS 0: no decimal pack (font 5 uses those glyphs), plus marker on
+OSD_OPTIONS 0
+# SI units: m/s and m
+OSD_UNITS 2
+OSD_CHAN 0
+OSD1_ENABLE 1
+# plus marker at the centre (drawn by the horizon item)
+OSD1_HORIZON_EN 1
+OSD1_HORIZON_X 14
+OSD1_HORIZON_Y 8
+# speed scale left of the plus, altitude scale right of it
+OSD1_SIDEBARS_EN 1
+OSD1_SIDEBARS_X 5
+OSD1_SIDEBARS_Y 5
+OSD_SB_H_OFS -2
+# corners: flight mode top-left, GPS top-right, battery bottom-left
+OSD1_FLTMODE_EN 1
+OSD1_FLTMODE_X 2
+OSD1_FLTMODE_Y 1
+OSD1_SATS_EN 1
+OSD1_SATS_X 22
+OSD1_SATS_Y 1
+OSD1_HDOP_EN 1
+OSD1_HDOP_X 22
+OSD1_HDOP_Y 2
+OSD1_BAT_VOLT_EN 1
+OSD1_BAT_VOLT_X 2
+OSD1_BAT_VOLT_Y 14
+OSD1_MESSAGE_EN 1
+OSD1_MESSAGE_X 2
+OSD1_MESSAGE_Y 13
+# items not in the layout
+OSD1_ALTITUDE_EN 0
+OSD1_GSPEED_EN 0
+OSD1_RSSI_EN 0
+OSD1_CURRENT_EN 0
+OSD1_BATUSED_EN 0
+OSD1_HOME_EN 0
+OSD1_THROTTLE_EN 0
+OSD1_HEADING_EN 0
+OSD1_COMPASS_EN 0
+OSD1_VSPEED_EN 0
+OSD1_GPSLAT_EN 0
+OSD1_GPSLONG_EN 0
+
 # Battery monitor - analog volt+curr on PC0/PC1
 BATT_MONITOR 4
 
