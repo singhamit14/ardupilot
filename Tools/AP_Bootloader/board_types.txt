@@ -616,6 +616,7 @@ AP_HW_sw-spar-f407                   6000
 AP_HW_sw-boom-f407                   6001
 AP_HW_sw-nav-f405                    6002
 AP_HW_Sphere_H7                      6003
+AP_HW_Sphere                         6003
 
 # IDs 6100-6109 reserved for MFE
 AP_HW_MFE_PDB_CAN                    6100
