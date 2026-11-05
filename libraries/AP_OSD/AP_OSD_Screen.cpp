@@ -1750,7 +1750,23 @@ void AP_OSD_Screen::draw_horizon(uint8_t x, uint8_t y)
     }
 
     if (!check_option(AP_OSD::OPTION_DISABLE_CROSSHAIR)) {
-        backend->write(x-1,y, false, "%c%c%c", SYMBOL(SYM_AH_CENTER_LINE_LEFT), SYMBOL(SYM_AH_CENTER), SYMBOL(SYM_AH_CENTER_LINE_RIGHT));
+        // Sphere: large plus marker built from the horizon line glyphs.
+        // Cells are 12x18 px, so the horizontal arm gets more cells than
+        // the vertical arm to look about the same length on screen.
+        const int8_t h_arm = 3;   // cells left/right of center
+        const int8_t v_arm = 2;   // cells above/below center
+        // middle glyph of each horizon set = line through the cell center
+        const char h_mid = SYMBOL(SYM_AH_H_START) + (SYMBOL(SYM_AH_H_COUNT) - 1) - SYMBOL(SYM_AH_H_COUNT) / 2;
+        const char v_mid = SYMBOL(SYM_AH_V_START) + SYMBOL(SYM_AH_V_COUNT) / 2;
+        for (int8_t d = 1; d <= h_arm; d++) {
+            backend->write(x - d, y, false, "%c", h_mid);
+            backend->write(x + d, y, false, "%c", h_mid);
+        }
+        for (int8_t d = 1; d <= v_arm; d++) {
+            backend->write(x, y - d, false, "%c", v_mid);
+            backend->write(x, y + d, false, "%c", v_mid);
+        }
+        backend->write(x, y, false, "%c", SYMBOL(SYM_AH_CENTER));
     }
 
 }
