@@ -46,6 +46,9 @@ public:
     // return a correction factor used to display angles correctly
     virtual float get_aspect_ratio_correction() const {return 1;}
 
+    // true when the detected video signal is NTSC (13 rows instead of 16)
+    bool is_ntsc() const { return _format == FORMAT_NTSC; }
+
     //clear screen
     //should match hw blink
     virtual void clear()

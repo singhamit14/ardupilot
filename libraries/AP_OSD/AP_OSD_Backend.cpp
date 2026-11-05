@@ -84,7 +84,10 @@ void AP_OSD_Backend::write(uint8_t x, uint8_t y, bool blink, const char *fmt, ..
     va_start(ap, fmt);
     char buff[32+1]; // +1 for null-termination
     // note: format_string_for_osd() always terminates the string
-    IGNORE_RETURN(format_string_for_osd(buff, sizeof(buff), check_option(AP_OSD::OPTION_DECIMAL_PACK), fmt, ap));
+    // the Sphere font (OSD_FONT 5) stores its boot logo in the decimal-pack
+    // glyph slots, so decimal packing is off while it is selected
+    const bool decimal_pack = check_option(AP_OSD::OPTION_DECIMAL_PACK) && get_font_num() != 5;
+    IGNORE_RETURN(format_string_for_osd(buff, sizeof(buff), decimal_pack, fmt, ap));
     va_end(ap);
     // buff is null terminated, this call should be safe without further checks
     write(x, y, buff);

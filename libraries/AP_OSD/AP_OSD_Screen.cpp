@@ -48,6 +48,7 @@
 #if APM_BUILD_TYPE(APM_BUILD_Rover)
 #include <AP_WindVane/AP_WindVane.h>
 #endif
+#include <AP_Common/AP_FWVersion.h>
 #include <AP_Filesystem/AP_Filesystem.h>
 
 #include <ctype.h>
@@ -1303,6 +1304,16 @@ uint8_t AP_OSD_AbstractScreen::symbols_lookup_table[AP_OSD_NUM_SYMBOLS];
 
 #define SYMBOL(n) AP_OSD_AbstractScreen::symbols_lookup_table[n]
 
+// Sphere board font (OSD_FONT 5) glyph slots, see draw_sphere_splash()
+#define SPHERE_FONT_NUM         5
+#define SPHERE_SPLASH_MS        4000
+#define SPHERE_LOGO_COLS        8
+#define SPHERE_LOGO_ROWS        5
+#define SPHERE_SYM_CORNER_TL    0x05
+#define SPHERE_SYM_CORNER_TR    0x08
+#define SPHERE_SYM_CORNER_BL    0x0B
+#define SPHERE_SYM_CORNER_BR    0x0C
+
 // constructor
 AP_OSD_Screen::AP_OSD_Screen()
 {
@@ -1771,6 +1782,78 @@ void AP_OSD_Screen::draw_horizon(uint8_t x, uint8_t y)
 
 }
 
+/*
+  Sphere board font (OSD_FONT 5, libraries/AP_OSD/fonts/font5.bin).
+  It is the clarity font with extra glyphs; the slot numbers below must
+  match tools/osd_font/make_sphere_font.py in the Sphere board repo.
+  Only used on font based analog backends (MAX7456/AT7456E, SITL).
+ */
+bool AP_OSD_Screen::sphere_font_active() const
+{
+    if (osd->font_num != SPHERE_FONT_NUM) {
+        return false;
+    }
+    const AP_OSD::osd_types t = backend->get_backend_type();
+    return t == AP_OSD::OSD_MAX7456 || t == AP_OSD::OSD_SITL;
+}
+
+// returns true while the boot screen is showing
+bool AP_OSD_Screen::draw_sphere_splash(void)
+{
+    static uint32_t first_draw_ms;
+    const uint32_t now_ms = AP_HAL::millis();
+    if (first_draw_ms == 0) {
+        first_draw_ms = now_ms ? now_ms : 1;
+    }
+    if (now_ms - first_draw_ms >= SPHERE_SPLASH_MS) {
+        return false;
+    }
+
+    // logo, 8 x 5 cells, centred
+    static const uint8_t logo[SPHERE_LOGO_ROWS][SPHERE_LOGO_COLS] = {
+        { 0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7 },
+        { 0xC8, 0xC9, 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5 },
+        { 0xD6, 0xD7, 0xD8, 0xD9, 0x70, 0x71, 0x72, 0x73 },
+        { 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x8A, 0x8B },
+        { 0x8C, 0x8D, 0x8E, 0x8F, 0xB4, 0xB5, 0xB6, 0xB7 },
+    };
+    const uint8_t cols = 30;
+    const uint8_t logo_x = (cols - SPHERE_LOGO_COLS) / 2;
+    const uint8_t logo_y = 1;
+    for (uint8_t r = 0; r < SPHERE_LOGO_ROWS; r++) {
+        char line[SPHERE_LOGO_COLS + 1];
+        memcpy(line, logo[r], SPHERE_LOGO_COLS);
+        line[SPHERE_LOGO_COLS] = 0;
+        backend->write(logo_x, logo_y + r, line);
+    }
+
+    static const char name[] = "S C I E N T E C H";
+    backend->write((cols - (sizeof(name) - 1)) / 2, 7, name);
+    const char dash = SYMBOL(SYM_AH_H_START) + (SYMBOL(SYM_AH_H_COUNT) - 1) - SYMBOL(SYM_AH_H_COUNT) / 2;
+    backend->write(9, 9, false, "%c%c SPHERE %c%c", dash, dash, dash, dash);
+
+    // firmware version, upper case: lower case slots hold symbols
+    char ver[31];
+    strncpy(ver, AP::fwversion().fw_string, sizeof(ver) - 1);
+    ver[sizeof(ver) - 1] = 0;
+    for (uint8_t i = 0; ver[i]; i++) {
+        ver[i] = toupper(ver[i]);
+    }
+    backend->write((cols - strlen(ver)) / 2, 11, ver);
+    return true;
+}
+
+// viewfinder brackets in the four screen corners
+void AP_OSD_Screen::draw_sphere_corners(void)
+{
+    const uint8_t right = 29;
+    const uint8_t bottom = backend->is_ntsc() ? 12 : 15;
+    backend->write(0, 0, false, "%c", SPHERE_SYM_CORNER_TL);
+    backend->write(right, 0, false, "%c", SPHERE_SYM_CORNER_TR);
+    backend->write(0, bottom, false, "%c", SPHERE_SYM_CORNER_BL);
+    backend->write(right, bottom, false, "%c", SPHERE_SYM_CORNER_BR);
+}
+
 void AP_OSD_Screen::draw_distance(uint8_t x, uint8_t y, float distance)
 {
     char unit_icon = u_icon(DISTANCE);
@@ -1880,6 +1963,10 @@ void AP_OSD_Screen::draw_sidebars(uint8_t x, uint8_t y)
     WITH_SEMAPHORE(ahrs.get_semaphore());
     bool have_speed_estimate = ahrs.airspeed_EAS(aspd);
     if (!have_speed_estimate) { aspd = 0.0f; }
+    if (sphere_font_active()) {
+        // Sphere is a copter: show ground speed on the left scale
+        aspd = ahrs.groundspeed_vector().length();
+    }
     ahrs.get_relative_position_D_home(alt);
     float scaled_aspd = u_scale(SPEED, aspd);
     float scaled_alt = u_scale(ALTITUDE, -alt);
@@ -2576,6 +2663,12 @@ void AP_OSD_Screen::draw(void)
 {
     if (!enabled || !backend) {
         return;
+    }
+    if (sphere_font_active()) {
+        if (draw_sphere_splash()) {
+            return;
+        }
+        draw_sphere_corners();
     }
     //Note: draw order should be optimized.
     //Big and less important items should be drawn first,

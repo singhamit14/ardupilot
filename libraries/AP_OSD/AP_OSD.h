@@ -281,6 +281,10 @@ private:
     void draw_message(uint8_t x, uint8_t y);
     void draw_gspeed(uint8_t x, uint8_t y);
     void draw_horizon(uint8_t x, uint8_t y);
+    // Sphere board font (OSD_FONT 5): boot logo, viewfinder corners
+    bool sphere_font_active() const;
+    bool draw_sphere_splash(void);
+    void draw_sphere_corners(void);
     void draw_home(uint8_t x, uint8_t y);
     void draw_throttle(uint8_t x, uint8_t y);
     void draw_heading(uint8_t x, uint8_t y);
